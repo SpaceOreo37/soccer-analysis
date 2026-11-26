@@ -95,12 +95,16 @@ third_party/           gitignored, never committed:
 ## Licensing rules (decided 2026-11-25: Apache-2.0, "Option B")
 Full reasoning is in `docs/licensing.md`.
 - **Our own code in `src/` is Apache-2.0.**
-- **Allowed dependency licenses: MIT, BSD, Apache-2.0, and MPL-2.0 (unmodified only).** This
+- **Allowed dependency licenses: MIT, BSD, Apache-2.0, other OSI-approved permissive licenses
+  (ISC, PSF, Zlib, BSL-1.0, CNRI-Python, etc.), plus CC0 and MIT-CMU, and MPL-2.0 (unmodified
+  only).** This
   covers libraries (including indirect ones), model weights, and training data. MPL-2.0 is
   allowed only for third-party packages we use as-is, like certifi and tqdm. Never copy or
-  modify MPL-licensed files. Before adding any dependency, check its license and its own
-  dependencies' licenses. If it's anything else (GPL/AGPL/LGPL, non-commercial, Roboflow
-  PML-1.0, unknown), stop and ask the owner.
+  modify MPL-licensed files.
+- **Not allowed:** copyleft licenses (GPL, AGPL, LGPL), apart from the MPL-2.0 exception
+  above. Also not allowed: non-commercial, Roboflow PML-1.0, or unknown licenses. Before
+  adding any dependency, check its license and its own dependencies' licenses. If it's not
+  clearly in the allowed list, stop and ask the owner.
 - **Ultralytics YOLO (AGPL-3.0) and Roboflow's sample models are a learning baseline only.**
   They live in `third_party/` (their own `baseline-venv`), run only via
   `scripts/run_baseline.py`, are **never imported from `src/`**, and are **never shipped**

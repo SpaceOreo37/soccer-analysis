@@ -6,16 +6,23 @@ The project is licensed under **Apache-2.0** (see [`LICENSE`](../LICENSE)). The 
 follow from that:
 
 1. **Our own code in `src/` is Apache-2.0.** Its dependencies may only use these licenses:
-   **MIT, BSD (2- or 3-clause), Apache-2.0, and MPL-2.0 (unmodified only).** This covers code
-   we import (including indirect dependencies) *and* model weights and datasets we train on or
-   ship. MPL-2.0 is allowed only for third-party packages used as-is (e.g. certifi, tqdm).
-   MPL's obligations apply only to changes made to the MPL-licensed files themselves, so
-   using them unmodified adds no obligations for our code. We never copy MPL-licensed files
-   into our repo or modify them. If a dependency's license is anything else (GPL, AGPL,
-   LGPL, "non-commercial", custom model licenses like Roboflow's PML-1.0, or unknown), it
-   does not go into `src/` without a new decision. Check the licenses of new dependencies,
-   including what *they* depend on, before adding them. (MPL-2.0 allowance decided
-   2026-11-25.)
+   - **MIT, BSD (2- or 3-clause), Apache-2.0**
+   - **other OSI-approved permissive licenses**: ISC, PSF (Python Software Foundation), Zlib,
+     BSL-1.0 (Boost), CNRI-Python, and similar. Also explicitly allowed: **CC0** (a
+     public-domain dedication; it was submitted to OSI but withdrawn, so it isn't formally
+     OSI-approved) and **MIT-CMU** (an MIT variant). These ask at most that we keep a
+     copyright notice.
+   - **MPL-2.0, unmodified only**: allowed only for third-party packages used as-is (e.g.
+     certifi, tqdm). MPL's obligations apply only to changes made to the MPL-licensed files
+     themselves, so using them unmodified adds no obligations for our code. We never copy
+     MPL-licensed files into our repo or modify them.
+
+   This covers code we import (including indirect dependencies) *and* model weights and
+   datasets we train on or ship. **Copyleft licenses (GPL, AGPL, LGPL) are not allowed**,
+   apart from the MPL-2.0 exception above. Neither are "non-commercial" terms, custom model
+   licenses like Roboflow's PML-1.0, or unknown licenses. They don't go into `src/` without a
+   new decision. Check the licenses of new dependencies, including what *they* depend on,
+   before adding them. (MPL-2.0 and other-permissive allowances decided 2026-11-25.)
 2. **Ultralytics YOLO and Roboflow's sample models are a learning baseline only.** They stay in
    `third_party/` (gitignored) with their own separate environment (`third_party/baseline-venv`,
    defined in `baseline/pyproject.toml`), are run only through `scripts/run_baseline.py`, are
