@@ -117,3 +117,51 @@ running the pitch model less often when the camera is still.
   jsonargparse, pyDeprecate). Their own dependencies still need checking when we install them.
 
 No processing was run this session (letting the laptop cool down).
+
+## 2026-11-25 (evening): Two environments + src/ import guard
+
+### What we did
+- **Split the environments** to solve the supervision conflict (YOLO example needs `<0.28`;
+  `rfdetr` needs `>=0.29`, `trackers` needs `>=0.31`):
+  - **Main `.venv`** (for `src/`): dropped the `baseline` dependency group and added `rfdetr`
+    1.12.1, `trackers` 2.7.0, `supervision` 0.32.2. `uv sync` removed ultralytics from it
+    automatically. Imports of `trackers.ByteTrackTracker` and `RFDETRNano/Small/Medium/Large`
+    work. No models downloaded or run yet.
+  - **YOLO baseline** now has its own environment in `third_party/baseline-venv/` (gitignored),
+    built from a tracked `baseline/pyproject.toml` + `baseline/uv.lock`. Same versions as
+    Phase 0: torch 2.15.0, supervision 0.27.0.post2, ultralytics 8.4.219. Building it took
+    under a second because uv reused its download cache.
+  - Why keep the recipe in git but the environment in `third_party/`: the environment folder is
+    a disposable build product (like `.venv/`). The recipe plus lock file are what let the
+    Windows PC rebuild the exact same environment.
+- `scripts/run_baseline.py` now **re-launches itself with the baseline Python** if started
+  from any other environment, so `uv run python scripts/run_baseline.py …` still just works.
+  Timing records now include the supervision version.
+- `scripts/setup_baseline.sh` builds the baseline environment with `uv sync --project baseline
+  --locked` (exact versions from the lock file).
+- **Pre-commit guard:** commits are refused if any staged `src/` Python file or notebook imports
+  ultralytics.
+
+### Tests
+- **Baseline still runs:** RADAR on a new 4-second clip (`data/clips/2e57b9_0_4s.mp4`,
+  100 frames), started from the *main* environment via `uv run` to test the auto-switch. It
+  completed in 178.8 s (setup 11.0 s, 0.59 fps), and the timing record shows supervision
+  0.27.0.post2, so it ran in the baseline environment. Output looks right (teams, IDs, minimap).
+  The speed was already the throttled speed from frame 1, so the laptop was still warm from
+  earlier.
+- **Hook:** a real `git commit` of a fake `src/soccer_analysis/_hook_test.py` containing
+  `from ultralytics import YOLO` was refused. Then 13 cases were run through the hook directly:
+  8 import styles were all blocked (`import ultralytics`, `import os, ultralytics`,
+  `import ultralytics.utils as u`, an indented `from ultralytics…`, `importlib.import_module`,
+  `__import__`, and two notebook-cell forms). 5 were correctly allowed (comment, docstring,
+  `import ultralytics_compat`, `from trackers import …`, and an ultralytics import in
+  `scripts/`, which is outside `src/`). Test files deleted. The weights guard still blocks a fake
+  `test.pt`.
+- **License audit of the main `.venv`** (61 packages): all permissive except **certifi** and
+  **tqdm** (**MPL-2.0**, weak file-level copyleft, pulled in by `requests`/`rfdetr`). Open
+  question for the owner.
+
+### Minor oddity
+- The first run of the updated `setup_baseline.sh` reinstalled the baseline packages. The cause
+  is unclear: the environment wasn't recreated (same Python, same folder). Versions afterwards
+  were identical to the lock file, and a second run was a no-op ("Checked 82 packages").

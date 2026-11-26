@@ -12,8 +12,9 @@ follow from that:
    without a new decision. Check the licenses of new dependencies, including what *they*
    depend on, before adding them.
 2. **Ultralytics YOLO and Roboflow's sample models are a learning baseline only.** They stay in
-   `third_party/` (gitignored) and the `baseline` dependency group, are run only through
-   `scripts/run_baseline.py`, are **never imported from `src/`**, and are **never shipped**
+   `third_party/` (gitignored) with their own separate environment (`third_party/baseline-venv`,
+   defined in `baseline/pyproject.toml`), are run only through `scripts/run_baseline.py`, are
+   **never imported from `src/`** (enforced by the pre-commit hook), and are **never shipped**
    (not in the web app, the GPU worker, a Docker image, or a release).
 3. **Production detector: [RF-DETR](https://github.com/roboflow/rf-detr)**, Apache-2.0
    sizes only (Nano–Large). Not the XL/2XL sizes (or any other size) under Roboflow's
@@ -33,9 +34,14 @@ obligations.
 Notes:
 - `scripts/run_baseline.py` is our own code and is Apache-2.0 too. It just *runs* AGPL code
   that we don't distribute. It's a dev tool, not part of the product.
-- Dependency groups (like `baseline`) are not included in the package's published metadata,
-  so installing `soccer-analysis` never pulls in Ultralytics. Deployments must not install the
-  `baseline` group.
+- Ultralytics is not a dependency of the main project at all (`pyproject.toml`). It exists only
+  in the separate baseline environment, so installing `soccer-analysis` or syncing the main
+  `.venv` never pulls it in. Deployments use the main environment only.
+- Transitive check (2026-11-25): all 61 packages in the main `.venv` are permissive
+  (MIT/BSD/Apache/ISC/PSF-style), except **certifi** and **tqdm**, which are **MPL-2.0**
+  (weak, file-level copyleft that only applies if we modify *their* files; it doesn't spread to
+  our code). They arrive indirectly via `requests` and `rfdetr`. Whether MPL-2.0 is acceptable
+  under rule 1 is an open question for the owner.
 
 ---
 
@@ -118,8 +124,8 @@ license decision is really one question: do we keep Ultralytics YOLO in the pipe
 ### Option B: MIT or Apache-2.0, and replace Ultralytics before Phase 5
 - **Meaning:** A maximally reusable project. Anyone (including companies) can use it for
   anything with attribution.
-- **How:** Keep Ultralytics only in the throwaway Phase 0 `baseline` dependency group (already
-  separated in `pyproject.toml`). Never import it from `src/`. In Phase 1–2, switch detection to
+- **How:** Keep Ultralytics only in the throwaway Phase 0 `baseline` dependency group (since
+  moved to its own separate environment). Never import it from `src/`. In Phase 1–2, switch detection to
   **RF-DETR Apache-licensed sizes**, tracking to **`trackers` (Apache-2.0)**, and train our own
   player/ball/pitch models on data with clear terms (SoccerTrack v2, coach-consented footage).
 - **Pros:** Widest adoption, no copyleft questions for the web app, keeps commercial doors
