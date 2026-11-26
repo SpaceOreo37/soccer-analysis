@@ -1,0 +1,19 @@
+#!/bin/sh
+# Blocks commits containing videos, model weights, datasets, or any file > 20 MB.
+# Enable once per clone with:  git config core.hooksPath .githooks
+MAX_BYTES=20000000
+BLOCKED='\.(pt|pth|ckpt|onnx|engine|safetensors|bin|tflite|mlmodel|pb|h5|keras|gguf|torchscript|mp4|mov|avi|mkv|webm|m4v|mts|zip|tar|tgz|gz|7z|rar|npy|npz|parquet|feather|hdf5|pkl)$'
+fail=0
+for f in $(git diff --cached --name-only --diff-filter=ACMR); do
+  if echo "$f" | grep -qiE "$BLOCKED"; then
+    echo "BLOCKED (video/weights/dataset file type): $f"; fail=1
+  fi
+  size=$(git cat-file -s ":$f" 2>/dev/null || echo 0)
+  if [ "$size" -gt "$MAX_BYTES" ]; then
+    echo "BLOCKED (larger than 20 MB): $f"; fail=1
+  fi
+done
+if [ "$fail" -ne 0 ]; then
+  echo "Commit refused. Large media/model files belong in data/ or outputs/ (gitignored), not git."
+  exit 1
+fi

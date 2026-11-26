@@ -221,3 +221,68 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ======================================================================
+# soccer-analysis project rules
+# Goal: videos, model weights, and datasets can NEVER be committed.
+# ======================================================================
+
+# Local data and pipeline outputs (keep only the .gitkeep placeholders)
+data/*
+!data/.gitkeep
+outputs/*
+!outputs/.gitkeep
+
+# Third-party code cloned locally for reference/running (e.g. roboflow/sports)
+third_party/
+
+# Model weights / checkpoints / exported models
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.engine
+*.safetensors
+*.bin
+*.tflite
+*.mlmodel
+*.mlpackage/
+*.pb
+*.h5
+*.keras
+*.gguf
+*.torchscript
+*_openvino_model/
+runs/
+weights/
+wandb/
+
+# Videos
+*.mp4
+*.MP4
+*.mov
+*.MOV
+*.avi
+*.mkv
+*.webm
+*.m4v
+*.mts
+*.MTS
+
+# Datasets / archives / large data formats
+datasets/
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+*.npy
+*.npz
+*.parquet
+*.feather
+*.hdf5
+*.pkl
+
+# macOS
+.DS_Store
