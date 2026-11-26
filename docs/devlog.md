@@ -161,7 +161,17 @@ No processing was run this session (letting the laptop cool down).
   **tqdm** (**MPL-2.0**, weak file-level copyleft, pulled in by `requests`/`rfdetr`). Open
   question for the owner.
 
-### Minor oddity
-- The first run of the updated `setup_baseline.sh` reinstalled the baseline packages. The cause
-  is unclear: the environment wasn't recreated (same Python, same folder). Versions afterwards
-  were identical to the lock file, and a second run was a no-op ("Checked 82 packages").
+### Bug found after pushing (and fixed)
+- The first run of the updated `setup_baseline.sh` unexpectedly installed packages. Cause:
+  the script used a **relative** `UV_PROJECT_ENVIRONMENT=third_party/baseline-venv`, and uv
+  resolves that relative to the *project* directory (`baseline/`), not the current folder.
+  So it built a second, stray 1.3 GB environment at `baseline/third_party/baseline-venv`, and
+  my version check looked at the real one. (It wasn't committed: the `.gitignore` rule
+  `third_party/` matches at any depth.) The 4 s radar test was unaffected because it used the
+  real `third_party/baseline-venv`.
+- **Fix:** the script now passes an absolute path (`pwd -W` on Git Bash for a `C:/…` path,
+  else `pwd`). The stray environment was deleted. Re-running setup now just checks the real
+  environment ("Checked 82 packages") and creates nothing under `baseline/`. CLAUDE.md and
+  the comment in `baseline/pyproject.toml` were corrected too.
+- Lesson: when a check passes "for an unclear reason", look for a second copy of the thing
+  being checked.

@@ -45,7 +45,7 @@ only works with `<0.28`, and `trackers`/`rfdetr` need `>=0.31`/`>=0.29`.
 | Defined in (tracked) | `pyproject.toml` + `uv.lock` | `baseline/pyproject.toml` + `baseline/uv.lock` |
 | Lives in (gitignored) | `.venv/` | `third_party/baseline-venv/` |
 | Key packages | `rfdetr`, `trackers`, `supervision>=0.31` | `ultralytics` (AGPL), `sports`, `supervision>=0.26,<0.28` |
-| Build / refresh | `uv sync` | `scripts/setup_baseline.sh` (= `UV_PROJECT_ENVIRONMENT=third_party/baseline-venv uv sync --project baseline --locked`) |
+| Build / refresh | `uv sync` | `scripts/setup_baseline.sh` (= `UV_PROJECT_ENVIRONMENT="$PWD/third_party/baseline-venv" uv sync --project baseline --locked` from the repo root; the path **must be absolute**, otherwise uv resolves it under `baseline/`) |
 | Activate (macOS) | `source .venv/bin/activate` | `source third_party/baseline-venv/bin/activate` |
 | Activate (Windows) | `.venv\Scripts\activate` | `third_party\baseline-venv\Scripts\activate` |
 | Run without activating | `uv run python …` | not needed, see below |

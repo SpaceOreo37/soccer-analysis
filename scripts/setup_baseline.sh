@@ -12,7 +12,10 @@ cd "$(dirname "$0")/.."
 
 SPORTS_COMMIT=21a7d2b2ce77b047fac93527aed6dd08c69d85f3   # keep in sync with baseline/pyproject.toml
 DEST=third_party/sports
-BASELINE_VENV=third_party/baseline-venv   # relative on purpose: works in Git Bash on Windows too
+# Absolute path on purpose: uv resolves a relative UV_PROJECT_ENVIRONMENT against the project
+# directory (baseline/), not the current one. `pwd -W` gives a C:/... path in Git Bash on Windows.
+ROOT="$(pwd -W 2>/dev/null || pwd)"
+BASELINE_VENV="$ROOT/third_party/baseline-venv"
 
 if [ ! -d "$DEST/.git" ]; then
   git clone https://github.com/roboflow/sports.git "$DEST"
@@ -29,7 +32,7 @@ if [ -f "$DATA/football-player-detection.pt" ] && [ -f "$DATA/2e57b9_0.mp4" ]; t
   echo "Models and sample videos already downloaded in $DATA"
 else
   # their setup.sh calls `gdown`, which is installed in the baseline environment
-  PATH="$PWD/$BASELINE_VENV/bin:$PWD/$BASELINE_VENV/Scripts:$PATH" bash "$DEST/examples/soccer/setup.sh"
+  PATH="$PWD/third_party/baseline-venv/bin:$PWD/third_party/baseline-venv/Scripts:$PATH" bash "$DEST/examples/soccer/setup.sh"
 fi
 
 git config core.hooksPath .githooks   # enable the commit guards (media/weights, ultralytics in src/)

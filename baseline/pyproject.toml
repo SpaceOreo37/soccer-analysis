@@ -7,7 +7,8 @@
 #
 # This file and uv.lock are tracked so the environment is reproducible. The environment
 # itself is built in third_party/baseline-venv/ (gitignored) by scripts/setup_baseline.sh:
-#   UV_PROJECT_ENVIRONMENT=third_party/baseline-venv uv sync --project baseline
+#   UV_PROJECT_ENVIRONMENT="$PWD/third_party/baseline-venv" uv sync --project baseline --locked
+# (run from the repo root; the path must be absolute or uv puts it under baseline/)
 [project]
 name = "soccer-analysis-yolo-baseline"
 version = "0.0.0"
