@@ -1,19 +1,45 @@
 #!/bin/sh
-# Blocks commits containing videos, model weights, datasets, or any file > 20 MB.
-# Enable once per clone with:  git config core.hooksPath .githooks
+# Commit guards. Enable once per clone with:  git config core.hooksPath .githooks
+#   1. Blocks videos, model weights, datasets, or any file > 20 MB.
+#   2. Blocks any file in src/ that imports ultralytics (AGPL-3.0). src/ must stay
+#      permissively licensed. YOLO is a learning baseline only (see docs/licensing.md).
+# Checks the STAGED content (what will actually be committed), not the working copy.
 MAX_BYTES=20000000
 BLOCKED='\.(pt|pth|ckpt|onnx|engine|safetensors|bin|tflite|mlmodel|pb|h5|keras|gguf|torchscript|mp4|mov|avi|mkv|webm|m4v|mts|zip|tar|tgz|gz|7z|rar|npy|npz|parquet|feather|hdf5|pkl)$'
-fail=0
+# import ultralytics / import os, ultralytics / import ultralytics.x as y
+IMPORT_RE='^[[:space:]"]*import[[:space:]]+([A-Za-z0-9_.]+([[:space:]]+as[[:space:]]+[A-Za-z0-9_]+)?[[:space:]]*,[[:space:]]*)*ultralytics([.,[:space:]\\"]|$)'
+# from ultralytics import YOLO / from ultralytics.utils import ...
+FROM_RE='^[[:space:]"]*from[[:space:]]+ultralytics([.[:space:]]|$)'
+# importlib.import_module("ultralytics") / __import__("ultralytics")  (.{0,2} = quote, or \" in notebooks)
+DYNAMIC_RE='(import_module|__import__)\([[:space:]]*.{0,2}ultralytics'
+
+media_fail=0
+src_fail=0
 for f in $(git diff --cached --name-only --diff-filter=ACMR); do
   if echo "$f" | grep -qiE "$BLOCKED"; then
-    echo "BLOCKED (video/weights/dataset file type): $f"; fail=1
+    echo "BLOCKED (video/weights/dataset file type): $f"; media_fail=1
   fi
   size=$(git cat-file -s ":$f" 2>/dev/null || echo 0)
   if [ "$size" -gt "$MAX_BYTES" ]; then
-    echo "BLOCKED (larger than 20 MB): $f"; fail=1
+    echo "BLOCKED (larger than 20 MB): $f"; media_fail=1
+  fi
+  if echo "$f" | grep -qE '^src/.*\.(py|pyi|ipynb)$'; then
+    hits=$(git show ":$f" | grep -nE -e "$IMPORT_RE" -e "$FROM_RE" -e "$DYNAMIC_RE")
+    if [ -n "$hits" ]; then
+      echo "BLOCKED (src/ imports ultralytics, AGPL-3.0): $f"
+      echo "$hits" | sed 's/^/    line /'
+      src_fail=1
+    fi
   fi
 done
-if [ "$fail" -ne 0 ]; then
-  echo "Commit refused. Large media/model files belong in data/ or outputs/ (gitignored), not git."
+if [ "$media_fail" -ne 0 ]; then
+  echo "Large media/model files belong in data/ or outputs/ (gitignored), not git."
+fi
+if [ "$src_fail" -ne 0 ]; then
+  echo "src/ may only use permissively licensed code (MIT/BSD/Apache-2.0). Use RF-DETR + trackers;"
+  echo "YOLO stays in the baseline environment (scripts/run_baseline.py). See docs/licensing.md."
+fi
+if [ "$media_fail" -ne 0 ] || [ "$src_fail" -ne 0 ]; then
+  echo "Commit refused."
   exit 1
 fi
