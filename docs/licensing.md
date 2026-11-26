@@ -1,8 +1,49 @@
-# Licensing research (Phase 0)
+# Licensing
 
-> Status: **no license chosen yet.** This page collects the facts so the decision can be made.
-> Researched 2026-11-25. This is a summary for decision-making, not legal advice. License
-> terms change, so re-check the sources before shipping anything public (especially Phase 5).
+## Decision (2026-11-25): Apache-2.0, Option B
+
+The project is licensed under **Apache-2.0** (see [`LICENSE`](../LICENSE)). The rules that
+follow from that:
+
+1. **Everything under `src/` uses only permissive licenses**: MIT, BSD (2- or 3-clause), or
+   Apache-2.0. This covers code we import *and* model weights and datasets we train on or
+   ship. If a dependency's license is anything else (GPL, AGPL, LGPL, "non-commercial",
+   custom model licenses like Roboflow's PML-1.0, or unknown), it does not go into `src/`
+   without a new decision. Check the licenses of new dependencies, including what *they*
+   depend on, before adding them.
+2. **Ultralytics YOLO and Roboflow's sample models are a learning baseline only.** They stay in
+   `third_party/` (gitignored) and the `baseline` dependency group, are run only through
+   `scripts/run_baseline.py`, are **never imported from `src/`**, and are **never shipped**
+   (not in the web app, the GPU worker, a Docker image, or a release).
+3. **Production detector: [RF-DETR](https://github.com/roboflow/rf-detr)**, Apache-2.0
+   sizes only (Nano–Large). Not the XL/2XL sizes (or any other size) under Roboflow's
+   PML-1.0 license.
+4. **Production tracker: Roboflow's [`trackers`](https://github.com/roboflow/trackers)**
+   package (Apache-2.0).
+5. Training data must allow training *and* releasing the trained weights. SoccerTrack v2
+   (CC BY 4.0) still needs that confirmed (Phase 1 task).
+
+**Why:** we have to retrain on amateur footage anyway. Roboflow's sample models were
+trained on professional Bundesliga broadcasts and won't transfer well to Veo youth and high
+school footage. Since we're training our own models regardless, switching to an
+Apache-licensed detector costs little extra. It keeps the whole project permissive: anyone,
+including clubs, schools and companies, can use, host and build on it without AGPL
+obligations.
+
+Notes:
+- `scripts/run_baseline.py` is our own code and is Apache-2.0 too. It just *runs* AGPL code
+  that we don't distribute. It's a dev tool, not part of the product.
+- Dependency groups (like `baseline`) are not included in the package's published metadata,
+  so installing `soccer-analysis` never pulls in Ultralytics. Deployments must not install the
+  `baseline` group.
+
+---
+
+# Research (Phase 0, 2026-11-25)
+
+> This is the research the decision was based on. It's a summary for decision-making, not
+> legal advice. License terms change, so re-check the sources before shipping anything public
+> (especially Phase 5).
 
 ## Quick vocabulary
 
@@ -62,7 +103,7 @@ license decision is really one question: do we keep Ultralytics YOLO in the pipe
 - The paid way out is an [Ultralytics Enterprise License](https://www.ultralytics.com/license),
   meant for closed-source products. It's probably irrelevant for an open-source student project.
 
-## Options
+## Options (as presented; Option B was chosen with Apache-2.0)
 
 ### Option A: AGPL-3.0 for the whole project, keep Ultralytics
 - **Meaning:** Anyone can use, change and host the app, but anyone who hosts a modified version

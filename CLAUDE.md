@@ -23,8 +23,7 @@ Repo: https://github.com/SpaceOreo37/soccer-analysis (branch `main`).
   works.
 - If something fails, troubleshoot it yourself first. If truly stuck, explain the problem in
   plain language and offer options.
-- **No license has been chosen.** Don't add a LICENSE file or pick one. The research and
-  options are in `docs/licensing.md`; the owner decides.
+- The project is **Apache-2.0** (decided 2026-11-25). Follow the licensing rules below.
 - Add a dated entry to `docs/devlog.md` for each work session: what was done, what worked,
   what broke, and numbers.
 
@@ -46,15 +45,17 @@ Python is pinned to **3.12** (`.python-version`, `requires-python`) on both mach
   `.venv` by hand.
 - Dependency groups: the main `dependencies` list is for our own code (empty so far). The
   **`baseline`** group holds Roboflow's example stack (`sports`, `ultralytics`, `gdown`,
-  pinned `supervision`). It's installed by default (`[tool.uv] default-groups`). Ultralytics is
-  **AGPL-3.0**, so don't import it from `src/` until the owner makes the license decision.
+  pinned `supervision`). It's installed by default (`[tool.uv] default-groups`). It's a
+  **learning baseline only** (Ultralytics is AGPL-3.0): never import it from `src/`, and never
+  install it in a deployment.
 - Windows/AMD caveat: `uv.lock` resolves `torch` from PyPI. On the AMD PC, AMD's ROCm PyTorch
   wheels must replace it (probably via a platform-specific uv index/source). Work this out in
   Phase 1.
 
 ## Layout
 ```
-src/soccer_analysis/   our own pipeline package (Phase 1+; empty so far)
+LICENSE                Apache-2.0
+src/soccer_analysis/   our own pipeline package (Phase 1+; empty so far), permissive deps only
 scripts/               runnable entry points
   setup_baseline.sh    clone roboflow/sports (pinned) into third_party/, uv sync, download models+videos
   run_baseline.py      run their soccer example headless, time it, save H.264 video + timings
@@ -72,6 +73,20 @@ third_party/sports/    roboflow/sports clone (gitignored, never committed, never
 - A pre-commit hook in `.githooks/` blocks them even with `git add -f`. Each fresh clone must
   enable it once: `git config core.hooksPath .githooks` (`setup_baseline.sh` does this).
 - Never copy Roboflow's repo, models, or sample videos into tracked files.
+
+## Licensing rules (decided 2026-11-25: Apache-2.0, "Option B")
+Full reasoning is in `docs/licensing.md`.
+- **Everything under `src/` may use only permissive licenses: MIT, BSD, Apache-2.0.** That
+  includes libraries, model weights, and training data. Before adding any dependency, check its
+  license and its own dependencies' licenses. If it's anything else (GPL/AGPL/LGPL,
+  non-commercial, Roboflow PML-1.0, unknown), stop and ask the owner.
+- **Ultralytics YOLO (AGPL-3.0) and Roboflow's sample models are a learning baseline only.**
+  They live in `third_party/` + the `baseline` dependency group, run only via
+  `scripts/run_baseline.py`, are **never imported from `src/`**, and are **never shipped**
+  (web app, GPU worker, Docker image, release).
+- **Production detector: RF-DETR**, Apache-2.0 sizes only (Nano–Large; not the PML-1.0 sizes
+  such as XL/2XL). **Production tracker: Roboflow's `trackers` package** (Apache-2.0).
+- Training data must permit training and releasing the trained weights.
 
 ## Running the Phase 0 baseline
 ```bash
@@ -130,10 +145,23 @@ belong on the Windows/AMD PC.
 
 ## Roadmap (don't start a phase until the owner says so)
 - **Phase 0 — Setup + baseline (done 2026-11-25).** uv env, Roboflow soccer example running on
-  MPS, timing, licensing research, project structure.
-- **Phase 1:** Test the pipeline on **SoccerTrack v2** (amateur, full-pitch, labeled data on
-  Hugging Face). Write an **evaluation script** that compares our output to the ground-truth
-  labels. Set up the **Windows/AMD PC** and time a full match there.
+  MPS, timing, licensing research → Apache-2.0, project structure.
+- **Phase 1:**
+  - **Check SoccerTrack v2's license** (data CC BY 4.0, plus the extra terms you accept to
+    download it from Hugging Face). Confirm we're allowed to **train models on it and release
+    the trained weights**.
+  - **Build our own baseline in `src/`:** RF-DETR (pretrained, no training yet) plus a tracker
+    from the `trackers` package. Run it on the same 20-second clip
+    (`data/clips/2e57b9_0_20s.mp4`) and **compare quality and speed to the YOLO baseline**
+    (timings in `docs/devlog.md`; benchmark ≥300 frames because of thermal throttling).
+    ⚠️ Dependency conflict to solve first: `rfdetr` needs `supervision>=0.29`, `trackers`
+    needs `>=0.31`, but the YOLO baseline group pins `supervision<0.28`. They can't share one
+    environment. Options: declare the groups as conflicting in uv (`[tool.uv] conflicts`) and
+    stop installing `baseline` by default, or give the baseline its own separate environment.
+  - Test the pipeline on **SoccerTrack v2** (amateur, full-pitch, labeled data on Hugging
+    Face). Write an **evaluation script** that compares our output to the ground-truth labels.
+  - Set up the **Windows/AMD PC** (AMD ROCm PyTorch wheels instead of PyPI torch) and time a
+    full match there.
 - **Phase 2:** Restructure the pipeline into **stages that each save their output to a file**
   (detections → tracks → pitch coordinates → stats). Add team classification, a possession
   estimate, and heatmaps.

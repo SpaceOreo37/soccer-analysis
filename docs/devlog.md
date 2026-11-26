@@ -82,3 +82,38 @@ running the pitch model less often when the camera is still.
 ### Open decisions for the owner
 - **Project license** (see `docs/licensing.md`). The real question is whether to keep
   Ultralytics YOLO (AGPL-3.0) or plan to replace it with Apache-licensed RF-DETR + `trackers`.
+
+## 2026-11-25 (later): License decision: Apache-2.0, detector switch planned
+
+### Decision
+- The project is licensed **Apache-2.0** ("Option B" in `docs/licensing.md`). Added `LICENSE`,
+  a License section in the README, and `license = "Apache-2.0"` in `pyproject.toml`.
+- Everything under `src/` may only use **permissive** licenses (MIT, BSD, Apache-2.0). That
+  includes libraries, weights, and training data.
+- Ultralytics YOLO (AGPL-3.0) and Roboflow's sample models stay in `third_party/` as a
+  **learning baseline only**: never imported from `src/`, never shipped.
+- Production detector: **RF-DETR** (Apache-2.0 sizes, Nano–Large). Production tracker:
+  Roboflow's **`trackers`** package (Apache-2.0).
+
+### Why
+- **We have to retrain on amateur footage anyway.** Roboflow's sample models learned from
+  professional Bundesliga broadcasts: a high camera, perfect grass, pro kits, TV framing. Veo
+  follow-cam footage of youth and high school games looks different (lower camera, smaller
+  fields, mixed kits, lots of zooming). We'd need to train our own detector either way, so
+  training an Apache-licensed RF-DETR instead of YOLO costs little extra.
+- With YOLO the Phase 5 web app would have been bound by AGPL section 13. Apache-2.0 lets
+  anyone (clubs, schools, companies) use and host it with only attribution required, and it
+  includes an explicit patent grant that MIT lacks.
+- The sample models also have unclear training-data terms (Kaggle DFL competition data).
+  Training our own on clearly licensed data removes that question.
+
+### Found while checking
+- **Dependency conflict for Phase 1:** `rfdetr` 1.12 needs `supervision>=0.29`, `trackers` 2.7
+  needs `>=0.31`, but the YOLO baseline only works with `supervision<0.28` (see the Phase 0
+  entry). The two can't share one environment, so the Phase 1 setup must separate them
+  (uv conflicting groups, or a separate venv for the baseline). Recorded in CLAUDE.md.
+- Direct dependencies of `rfdetr` and `trackers` are all permissive (torch, torchvision,
+  transformers, supervision, numpy, scipy, opencv-python, pydantic, requests, rich, tqdm,
+  jsonargparse, pyDeprecate). Their own dependencies still need checking when we install them.
+
+No processing was run this session (letting the laptop cool down).
