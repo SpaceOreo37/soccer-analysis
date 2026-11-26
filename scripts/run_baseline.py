@@ -8,30 +8,56 @@ Why a wrapper instead of running their main.py directly?
     to H.264 with ffmpeg so the output opens anywhere.
 We import their code unchanged, so third_party/ stays a pristine copy of their repo.
 
+Environment: this script always runs in the separate YOLO baseline environment
+(third_party/baseline-venv, built by scripts/setup_baseline.sh), because the example needs
+supervision <0.28 while the main .venv has >=0.31. If you start it with any other Python,
+it re-launches itself with the baseline Python automatically.
+
 Example:
-    uv run python scripts/run_baseline.py --mode PLAYER_DETECTION \
+    python scripts/run_baseline.py --mode PLAYER_DETECTION \
         --source data/clips/2e57b9_0_20s.mp4 --device mps
 """
 
 from __future__ import annotations
 
-import argparse
-import importlib.util
-import json
-import platform
-import shutil
+import os
 import subprocess
 import sys
-import time
-from datetime import datetime
 from pathlib import Path
-from types import ModuleType
-
-import supervision as sv
-import torch
-from tqdm import tqdm
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+BASELINE_VENV = REPO_ROOT / "third_party" / "baseline-venv"
+
+
+def ensure_baseline_env() -> None:
+    """Re-run this script with the baseline environment's Python if we aren't already in it."""
+    if Path(sys.prefix).resolve() == BASELINE_VENV.resolve():
+        return
+    python = BASELINE_VENV / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    if not python.exists():
+        sys.exit(f"Baseline environment not found at {BASELINE_VENV}. Run scripts/setup_baseline.sh first.")
+    args = [str(python), str(Path(__file__).resolve()), *sys.argv[1:]]
+    if os.name == "nt":
+        sys.exit(subprocess.call(args))  # Windows has no real exec(); run as a child and pass the exit code through
+    os.execv(str(python), args)  # replace this process with the baseline Python
+
+
+ensure_baseline_env()
+
+# Imports below come from the baseline environment.
+import argparse  # noqa: E402
+import importlib.util  # noqa: E402
+import json  # noqa: E402
+import platform  # noqa: E402
+import shutil  # noqa: E402
+import time  # noqa: E402
+from datetime import datetime  # noqa: E402
+from types import ModuleType  # noqa: E402
+
+import supervision as sv  # noqa: E402
+import torch  # noqa: E402
+from tqdm import tqdm  # noqa: E402
+
 EXAMPLE_DIR = REPO_ROOT / "third_party" / "sports" / "examples" / "soccer"
 OUTPUTS_DIR = REPO_ROOT / "outputs"
 MODES = [
@@ -129,6 +155,7 @@ def main() -> None:
         "machine": f"{platform.system()} {platform.machine()} {platform.processor()}",
         "python": platform.python_version(),
         "torch": torch.__version__,
+        "supervision": sv.__version__,
     }
     with open(OUTPUTS_DIR / "timings.jsonl", "a") as f:
         f.write(json.dumps(record) + "\n")

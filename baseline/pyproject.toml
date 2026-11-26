@@ -1,0 +1,26 @@
+# Separate environment for the Phase 0 LEARNING BASELINE (Roboflow's soccer example with
+# Ultralytics YOLO, AGPL-3.0). Never used by src/, never shipped. See docs/licensing.md.
+#
+# Why separate from the main environment: the example only works with supervision <0.28,
+# but our production stack (rfdetr, trackers) needs supervision >=0.31. One environment
+# can't hold both versions.
+#
+# This file and uv.lock are tracked so the environment is reproducible. The environment
+# itself is built in third_party/baseline-venv/ (gitignored) by scripts/setup_baseline.sh:
+#   UV_PROJECT_ENVIRONMENT=third_party/baseline-venv uv sync --project baseline
+[project]
+name = "soccer-analysis-yolo-baseline"
+version = "0.0.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "sports @ git+https://github.com/roboflow/sports.git@21a7d2b2ce77b047fac93527aed6dd08c69d85f3",
+    "ultralytics",
+    "gdown",
+    # The example breaks on newer supervision:
+    #   >=0.28: Detections.merge() of all-empty detections returns tracker_id=None -> crash on frame 1
+    #   >=0.31: sv.ByteTrack removed (moved to the separate `trackers` package)
+    "supervision>=0.26,<0.28",
+]
+
+[tool.uv]
+package = false   # just an environment, not an installable package
