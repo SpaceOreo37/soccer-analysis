@@ -5,12 +5,16 @@ description = "AI-powered soccer match analysis for amateur, youth, and high sch
 readme = "README.md"
 # 3.12 everywhere: AMD's PyTorch build for Windows (RX 7900 XTX machine) requires 3.12.
 requires-python = ">=3.12,<3.13"
-# License intentionally not set yet -- see docs/licensing.md.
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+# Runtime dependencies of src/: permissive licenses ONLY (MIT, BSD, Apache-2.0).
+# See docs/licensing.md.
 dependencies = []
 
 [dependency-groups]
-# Phase 0 baseline: Roboflow's soccer example. Kept in its own group because
-# Ultralytics is AGPL-3.0 -- see docs/licensing.md before depending on it in src/.
+# LEARNING BASELINE ONLY: Roboflow's soccer example (Ultralytics YOLO, AGPL-3.0).
+# Never import any of these from src/ and never ship them. Dependency groups are
+# not part of the published package metadata, so they don't ship with it.
 baseline = [
     "sports @ git+https://github.com/roboflow/sports.git@21a7d2b2ce77b047fac93527aed6dd08c69d85f3",
     "ultralytics",
